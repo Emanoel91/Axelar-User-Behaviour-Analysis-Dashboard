@@ -565,7 +565,7 @@ col1, col2 = st.columns(2)
 
     # Pie Chart for Bridges
     fig2 = px.pie(
-        df_load_data_pie, 
+        df_pie, 
         values="SWAP_COUNT", 
         names="SOURCE_CHAIN", 
         title="Swap Count By Source Chain"
