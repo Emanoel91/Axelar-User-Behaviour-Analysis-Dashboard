@@ -1138,7 +1138,7 @@ col2.plotly_chart(fig2, use_container_width=True)
 
 # --- Row 8 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 @st.cache_data
-def load_top_blocks(start_date, end_date):
+def load_users(start_date, end_date):
     query = f"""
     WITH axelar_service AS (
         SELECT 
@@ -1257,6 +1257,6 @@ def load_top_blocks(start_date, end_date):
     """
     return pd.read_sql(query, conn)
 
-top_blocks = load_top_blocks(start_date, end_date)
-st.markdown("<h4 style='font-size:18px;'>🧱 10 Blocks with the Highest Number of Transactions</h4>", unsafe_allow_html=True)
-st.dataframe(top_blocks, use_container_width=True)
+top_users = load_users(start_date, end_date)
+st.markdown("<h4 style='font-size:18px;'>🏆Top 20 Addresses by Activity Levels</h4>", unsafe_allow_html=True)
+st.dataframe(top_users, use_container_width=True)
