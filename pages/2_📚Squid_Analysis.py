@@ -885,7 +885,7 @@ def load_pie_data_symbol(start_date, end_date):
       select Symbol,
         COUNT(DISTINCT id) AS Swap_Count, 
         ROUND(SUM(amount_usd)) AS Swap_Volume
-    FROM axelar_service
+    FROM overview
     GROUP BY 1
     ORDER BY 2 desc
     
