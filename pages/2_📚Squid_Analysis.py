@@ -1254,7 +1254,7 @@ limit 20
     """
     return pd.read_sql(query, conn)
 
-top_blocks = load_top_blocks(start_date, end_date)
+    top_blocks = load_top_blocks(start_date, end_date)
 
     st.markdown("<h4 style='font-size:18px;'>🧱 10 Blocks with the Highest Number of Transactions</h4>", unsafe_allow_html=True)
     st.dataframe(top_blocks, use_container_width=True)
