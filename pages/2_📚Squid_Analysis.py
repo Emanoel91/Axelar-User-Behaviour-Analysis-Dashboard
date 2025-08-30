@@ -372,8 +372,23 @@ col1, col2 = st.columns(2)
 
 with col1:
     fig1 = go.Figure()
-    fig1.add_bar(x=df_ts["DATE"], y=df_ts["SWAP_COUNT"], name="Swap Count", yaxis="y1")
-    fig1.add_trace(go.Scatter(x=df_ts["DATE"], y=df_ts["SWAP_VOLUME"], name="Swap Volume", mode="lines+markers", yaxis="y2"))
+    # نمودار ستونی نارنجی
+    fig1.add_bar(
+        x=df_ts["DATE"], 
+        y=df_ts["SWAP_COUNT"], 
+        name="Swap Count", 
+        yaxis="y1",
+        marker_color="orange"
+    )
+    # نمودار خطی آبی
+    fig1.add_trace(go.Scatter(
+        x=df_ts["DATE"], 
+        y=df_ts["SWAP_VOLUME"], 
+        name="Swap Volume", 
+        mode="lines+markers", 
+        yaxis="y2",
+        line=dict(color="blue")
+    ))
     fig1.update_layout(
         title="Swaps Over Time",
         yaxis=dict(title="Txns count"),
@@ -381,19 +396,34 @@ with col1:
         xaxis=dict(title=" "),
         barmode="group",
         legend=dict(
-        orientation="h",   
-        yanchor="bottom", 
-        y=1.05,           
-        xanchor="center",  
-        x=0.5
-    )
+            orientation="h",   
+            yanchor="bottom", 
+            y=1.05,           
+            xanchor="center",  
+            x=0.5
+        )
     )
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
     fig2 = go.Figure()
-    fig2.add_bar(x=df_ts["DATE"], y=df_ts["SWAPPER_COUNT"], name="Swapper Count", yaxis="y1")
-    fig2.add_trace(go.Scatter(x=df_ts["DATE"], y=df_ts["SWAP_VOLUME_PER_SWAPPER"], name="Swap Volume per Swapper", mode="lines+markers", yaxis="y2"))
+ 
+    fig2.add_bar(
+        x=df_ts["DATE"], 
+        y=df_ts["SWAPPER_COUNT"], 
+        name="Swapper Count", 
+        yaxis="y1",
+        marker_color="orange"
+    )
+  
+    fig2.add_trace(go.Scatter(
+        x=df_ts["DATE"], 
+        y=df_ts["SWAP_VOLUME_PER_SWAPPER"], 
+        name="Swap Volume per Swapper", 
+        mode="lines+markers", 
+        yaxis="y2",
+        line=dict(color="blue")
+    ))
     fig2.update_layout(
         title="Swappers Over Time",
         yaxis=dict(title="Wallet count"),
@@ -401,11 +431,12 @@ with col2:
         xaxis=dict(title=" "),
         barmode="group",
         legend=dict(
-        orientation="h",   
-        yanchor="bottom", 
-        y=1.05,           
-        xanchor="center",  
-        x=0.5
-    )
+            orientation="h",   
+            yanchor="bottom", 
+            y=1.05,           
+            xanchor="center",  
+            x=0.5
+        )
     )
     st.plotly_chart(fig2, use_container_width=True)
+
