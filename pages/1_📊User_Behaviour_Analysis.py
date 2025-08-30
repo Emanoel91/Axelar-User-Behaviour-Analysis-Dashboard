@@ -94,14 +94,149 @@ conn = snowflake.connector.connect(
     schema=schema
 )
 
-# --- Date Inputs ---------------------------------------------------------------------------------------------------
-col1, col2, col3 = st.columns(3)
+# --- Cached Query Runner ----------------------------------------------------------------------------
+@st.cache_data(show_spinner=True, ttl=3600)
+def run_query(query: str):
+    return pd.read_sql(query, conn)
 
-with col1:
-    timeframe = st.selectbox("Select Time Frame", ["month", "week", "day"])
 
-with col2:
-    start_date = st.date_input("Start Date", value=pd.to_datetime("2023-01-01"))
+# --- Row 1: User Acquisition & Retention ------------------------------------------------------------
+query_new_users = """
+WITH tab1 AS (
+    SELECT tx_from, MIN(block_timestamp::date) AS first_txn_date
+    FROM AXELAR.CORE.FACT_TRANSACTIONS
+    WHERE tx_succeeded='TRUE'
+    GROUP BY 1
+)
+SELECT 
+    DATE_TRUNC('day', first_txn_date) AS "Date",
+    COUNT(DISTINCT tx_from) AS "New Users"
+FROM tab1
+GROUP BY 1
+ORDER BY 1;
+"""
+df_new_users = run_query(query_new_users)
 
-with col3:
-    end_date = st.date_input("End Date", value=pd.to_datetime("2025-08-31"))
+fig_new_users = px.bar(
+    df_new_users,
+    x="Date",
+    y="New Users",
+    title="User Acquisition Rate per Day",
+    color_discrete_sequence=["orange"]
+)
+
+query_retention = """
+WITH FirstTransaction AS (
+  SELECT 
+    tx_from,
+    MIN(block_timestamp) AS first_transaction_time
+  FROM axelar.core.fact_transactions
+  WHERE tx_succeeded='TRUE'
+  GROUP BY tx_from
+)
+SELECT 
+  DATE(FirstTransaction.first_transaction_time) AS "Cohort Date",
+  DATE(transactions.block_timestamp) AS "Txns Date",
+  COUNT(DISTINCT transactions.tx_from) AS "Retained Users"
+FROM axelar.core.fact_transactions AS transactions
+JOIN FirstTransaction 
+  ON transactions.tx_from = FirstTransaction.tx_from
+WHERE transactions.block_timestamp > FirstTransaction.first_transaction_time
+GROUP BY 1, 2
+ORDER BY 1, 2;
+"""
+df_retention = run_query(query_retention)
+
+fig_retention = px.line(
+    df_retention,
+    x="Txns Date",
+    y="Retained Users",
+    title="User Retention per Day",
+    color_discrete_sequence=["blue"]
+)
+fig_retention.update_traces(mode="lines")  # خطی بدون نقاط
+
+col1, col2 = st.columns(2)
+col1.plotly_chart(fig_new_users, use_container_width=True)
+col2.plotly_chart(fig_retention, use_container_width=True)
+
+
+# --- Row 2: Transactions Count & Fees ---------------------------------------------------------------
+query_txns_fees = """
+SELECT 
+    DATE_TRUNC('day', block_timestamp) AS "Date", 
+    COUNT(DISTINCT tx_id) AS "Number of Transactions",
+    ROUND(SUM(fee)/POW(10,6)) AS "Transaction Fees"
+FROM AXELAR.CORE.FACT_TRANSACTIONS
+WHERE tx_succeeded = TRUE
+GROUP BY 1
+ORDER BY 1;
+"""
+df_txns_fees = run_query(query_txns_fees)
+
+fig_txn_count = px.bar(
+    df_txns_fees,
+    x="Date",
+    y="Number of Transactions",
+    title="Transactions Count per Day",
+    color_discrete_sequence=["blue"]
+)
+
+fig_txn_fees = px.bar(
+    df_txns_fees,
+    x="Date",
+    y="Transaction Fees",
+    title="Transaction Fees per Day",
+    color_discrete_sequence=["brown"]
+)
+
+col3, col4 = st.columns(2)
+col3.plotly_chart(fig_txn_count, use_container_width=True)
+col4.plotly_chart(fig_txn_fees, use_container_width=True)
+
+
+# --- Row 3: Failed Transactions + Repeat Users Table -----------------------------------------------
+query_failed = """
+SELECT 
+  DATE(block_timestamp) AS "Date",
+  COUNT(DISTINCT tx_id) AS "Failed Transactions"
+FROM axelar.core.fact_transactions
+WHERE tx_succeeded = FALSE
+GROUP BY 1
+ORDER BY 1;
+"""
+df_failed = run_query(query_failed)
+
+fig_failed = px.line(
+    df_failed,
+    x="Date",
+    y="Failed Transactions",
+    title="Failed Transactions per Day",
+    color_discrete_sequence=["red"]
+)
+fig_failed.update_traces(mode="lines")  # فقط خطی بدون نقطه
+
+query_repeat_users = """
+SELECT 
+  tx_from as "User",
+  DATE(block_timestamp) AS "Txn Date",
+  COUNT(distinct tx_id) AS "Txns Count"
+FROM axelar.core.fact_transactions
+GROUP BY "Txn Date", "User"
+HAVING COUNT(distinct tx_id) > 1
+ORDER BY "Txns Count" DESC
+LIMIT 100;
+"""
+df_repeat_users = run_query(query_repeat_users)
+df_repeat_users.index = df_repeat_users.index + 1  # اندیس از 1 شروع شود
+
+col5, col6 = st.columns(2)
+with col5:
+    st.plotly_chart(fig_failed, use_container_width=True)
+with col6:
+    st.subheader("Top 100 Repeat Users By No of Repeat Txns")
+    st.dataframe(
+        df_repeat_users,
+        use_container_width=True,
+        height=fig_failed.layout.height if "height" in fig_failed.layout else 500
+    )
