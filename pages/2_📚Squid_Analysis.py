@@ -1138,125 +1138,125 @@ col2.plotly_chart(fig2, use_container_width=True)
 
 # --- Row 8 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 @st.cache_data
-    def load_top_blocks(start_date, end_date):
+def load_top_blocks(start_date, end_date):
     query = f"""
-    with overview as (
     WITH axelar_service AS (
-  
-  SELECT 
-    created_at, 
-    LOWER(data:send:original_source_chain) AS source_chain, 
-    LOWER(data:send:original_destination_chain) AS destination_chain,
-    recipient_address AS user, 
+        SELECT 
+            created_at, 
+            LOWER(data:send:original_source_chain) AS source_chain, 
+            LOWER(data:send:original_destination_chain) AS destination_chain,
+            recipient_address AS user, 
 
-    CASE 
-      WHEN IS_ARRAY(data:send:amount) THEN NULL
-      WHEN IS_OBJECT(data:send:amount) THEN NULL
-      WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:amount::STRING)
-      ELSE NULL
-    END AS amount,
+            CASE 
+                WHEN IS_ARRAY(data:send:amount) THEN NULL
+                WHEN IS_OBJECT(data:send:amount) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:amount::STRING)
+                ELSE NULL
+            END AS amount,
 
-    CASE 
-      WHEN IS_ARRAY(data:send:amount) OR IS_ARRAY(data:link:price) THEN NULL
-      WHEN IS_OBJECT(data:send:amount) OR IS_OBJECT(data:link:price) THEN NULL
-      WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL AND TRY_TO_DOUBLE(data:link:price::STRING) IS NOT NULL 
-        THEN TRY_TO_DOUBLE(data:send:amount::STRING) * TRY_TO_DOUBLE(data:link:price::STRING)
-      ELSE NULL
-    END AS amount_usd,
+            CASE 
+                WHEN IS_ARRAY(data:send:amount) OR IS_ARRAY(data:link:price) THEN NULL
+                WHEN IS_OBJECT(data:send:amount) OR IS_OBJECT(data:link:price) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL 
+                     AND TRY_TO_DOUBLE(data:link:price::STRING) IS NOT NULL 
+                THEN TRY_TO_DOUBLE(data:send:amount::STRING) * TRY_TO_DOUBLE(data:link:price::STRING)
+                ELSE NULL
+            END AS amount_usd,
 
-    CASE 
-      WHEN IS_ARRAY(data:send:fee_value) THEN NULL
-      WHEN IS_OBJECT(data:send:fee_value) THEN NULL
-      WHEN TRY_TO_DOUBLE(data:send:fee_value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:fee_value::STRING)
-      ELSE NULL
-    END AS fee,
+            CASE 
+                WHEN IS_ARRAY(data:send:fee_value) THEN NULL
+                WHEN IS_OBJECT(data:send:fee_value) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:send:fee_value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:fee_value::STRING)
+                ELSE NULL
+            END AS fee,
 
-    id, 
-    'Token Transfers' AS "Service", 
-    data:link:asset::STRING AS raw_asset
+            id, 
+            'Token Transfers' AS "Service", 
+            data:link:asset::STRING AS raw_asset
+        FROM axelar.axelscan.fact_transfers
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+                sender_address ILIKE '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+                OR sender_address ILIKE '%0x492751eC3c57141deb205eC2da8bFcb410738630%' 
+                OR sender_address ILIKE '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%' 
+                OR sender_address ILIKE '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%' 
+                OR sender_address ILIKE '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%' 
+          )
 
-  FROM axelar.axelscan.fact_transfers
-  WHERE status = 'executed'
-    AND simplified_status = 'received'
-    AND (
-    sender_address ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' -- Squid
-    or sender_address ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%' -- Squid-blast
-    or sender_address ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%' -- Squid-fraxtal
-    or sender_address ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%' -- Squid coral
-    or sender_address ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%' -- Squid coral hub
-) 
+        UNION ALL
 
-  UNION ALL
+        SELECT  
+            created_at,
+            LOWER(data:call.chain::STRING) AS source_chain,
+            LOWER(data:call.returnValues.destinationChain::STRING) AS destination_chain,
+            data:call.transaction.from::STRING AS user,
 
-  SELECT  
-    created_at,
-    LOWER(data:call.chain::STRING) AS source_chain,
-    LOWER(data:call.returnValues.destinationChain::STRING) AS destination_chain,
-    data:call.transaction.from::STRING AS user,
+            CASE 
+                WHEN IS_ARRAY(data:amount) OR IS_OBJECT(data:amount) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:amount::STRING)
+                ELSE NULL
+            END AS amount,
 
-    CASE 
-      WHEN IS_ARRAY(data:amount) OR IS_OBJECT(data:amount) THEN NULL
-      WHEN TRY_TO_DOUBLE(data:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:amount::STRING)
-      ELSE NULL
-    END AS amount,
+            CASE 
+                WHEN IS_ARRAY(data:value) OR IS_OBJECT(data:value) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:value::STRING)
+                ELSE NULL
+            END AS amount_usd,
 
-    CASE 
-      WHEN IS_ARRAY(data:value) OR IS_OBJECT(data:value) THEN NULL
-      WHEN TRY_TO_DOUBLE(data:value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:value::STRING)
-      ELSE NULL
-    END AS amount_usd,
+            COALESCE(
+                CASE 
+                    WHEN IS_ARRAY(data:gas:gas_used_amount) OR IS_OBJECT(data:gas:gas_used_amount)
+                         OR IS_ARRAY(data:gas_price_rate:source_token.token_price.usd) 
+                         OR IS_OBJECT(data:gas_price_rate:source_token.token_price.usd) 
+                    THEN NULL
+                    WHEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) IS NOT NULL 
+                         AND TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING) IS NOT NULL 
+                    THEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) * TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING)
+                    ELSE NULL
+                END,
+                CASE 
+                    WHEN IS_ARRAY(data:fees:express_fee_usd) OR IS_OBJECT(data:fees:express_fee_usd) THEN NULL
+                    WHEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING)
+                    ELSE NULL
+                END
+            ) AS fee,
 
-    COALESCE(
-      CASE 
-        WHEN IS_ARRAY(data:gas:gas_used_amount) OR IS_OBJECT(data:gas:gas_used_amount) 
-          OR IS_ARRAY(data:gas_price_rate:source_token.token_price.usd) OR IS_OBJECT(data:gas_price_rate:source_token.token_price.usd) 
-        THEN NULL
-        WHEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) IS NOT NULL 
-          AND TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING) IS NOT NULL 
-        THEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) * TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING)
-        ELSE NULL
-      END,
-      CASE 
-        WHEN IS_ARRAY(data:fees:express_fee_usd) OR IS_OBJECT(data:fees:express_fee_usd) THEN NULL
-        WHEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING)
-        ELSE NULL
-      END
-    ) AS fee,
+            id, 
+            'GMP' AS "Service", 
+            data:symbol::STRING AS raw_asset
+        FROM axelar.axelscan.fact_gmp 
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+                data:approved:returnValues:contractAddress ILIKE '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+                OR data:approved:returnValues:contractAddress ILIKE '%0x492751eC3c57141deb205eC2da8bFcb410738630%' 
+                OR data:approved:returnValues:contractAddress ILIKE '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%' 
+                OR data:approved:returnValues:contractAddress ILIKE '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%' 
+                OR data:approved:returnValues:contractAddress ILIKE '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%'
+          )
+    ),
 
-    id, 
-    'GMP' AS "Service", 
-    data:symbol::STRING AS raw_asset
+    overview AS (
+        SELECT * FROM axelar_service
+    )
 
-  FROM axelar.axelscan.fact_gmp 
-  WHERE status = 'executed'
-    AND simplified_status = 'received'
-    AND (
-        data:approved:returnValues:contractAddress ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' -- Squid
-        or data:approved:returnValues:contractAddress ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%' -- Squid-blast
-        or data:approved:returnValues:contractAddress ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%' -- Squid-fraxtal
-        or data:approved:returnValues:contractAddress ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%' -- Squid coral
-        or data:approved:returnValues:contractAddress ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%' -- Squid coral hub
-        ) 
-)
-
-SELECT created_at, id, user, source_chain, destination_chain, raw_asset, "Service", amount, amount_usd, fee
-
-FROM axelar_service)
-
-select user AS "Swapper", count(distinct id) as "Swap Count", 
-round(sum(amount_usd),1) as "Swap Volume", count(distinct raw_asset) as "Swapped Token Count",
-count(distinct (source_chain || '➡' ||destination_chain)) as "Path Count", round(sum(fee),1) as "Paid Swap Fee"
-from overview
-WHERE created_at::date >= '{start_date}'
-AND created_at::date <= '{end_date}'
-group by 1
-order by 2 desc 
-limit 20
+    SELECT 
+        user AS "Swapper", 
+        COUNT(DISTINCT id) AS "Swap Count", 
+        ROUND(SUM(amount_usd), 1) AS "Swap Volume", 
+        COUNT(DISTINCT raw_asset) AS "Swapped Token Count",
+        COUNT(DISTINCT (source_chain || '➡' || destination_chain)) AS "Path Count", 
+        ROUND(SUM(fee), 1) AS "Paid Swap Fee"
+    FROM overview
+    WHERE created_at::DATE >= '{start_date}'
+      AND created_at::DATE <= '{end_date}'
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 20;
     """
     return pd.read_sql(query, conn)
 
-    top_blocks = load_top_blocks(start_date, end_date)
-
-    st.markdown("<h4 style='font-size:18px;'>🧱 10 Blocks with the Highest Number of Transactions</h4>", unsafe_allow_html=True)
-    st.dataframe(top_blocks, use_container_width=True)
-
+top_blocks = load_top_blocks(start_date, end_date)
+st.markdown("<h4 style='font-size:18px;'>🧱 10 Blocks with the Highest Number of Transactions</h4>", unsafe_allow_html=True)
+st.dataframe(top_blocks, use_container_width=True)
