@@ -2,8 +2,8 @@ import streamlit as st
 
 # --- Page Config: Tab Title & Icon ---
 st.set_page_config(
-    page_title="Squidrouter: Cross Chain & School NFT Dashboard",
-    page_icon="https://img.cryptorank.io/coins/squid1675241862798.png",
+    page_title="Axelar User Behaviour Analysis Dashboard",
+    page_icon="https://img.cryptorank.io/coins/axelar1663924228506.png",
     layout="wide" 
 )
 
