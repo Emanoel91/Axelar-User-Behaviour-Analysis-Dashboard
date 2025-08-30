@@ -14,6 +14,7 @@ st.set_page_config(
     layout="wide"
 )
 
+st.set_option("server.fileWatcherType", "poll")
 # --- Title -----------------------------------------------------------------------------------------------------
 st.title("📊User Behaviour Analysis")
 
@@ -213,6 +214,9 @@ ORDER BY 1;
 """
 df_failed = run_query(query_failed)
 
+
+FIXED_HEIGHT = 500
+
 fig_failed = px.line(
     df_failed,
     x="Date",
@@ -220,7 +224,9 @@ fig_failed = px.line(
     title="Failed Transactions per Day",
     color_discrete_sequence=["red"]
 )
-fig_failed.update_traces(mode="lines") 
+
+fig_failed.update_traces(mode="lines")
+fig_failed.update_layout(height=FIXED_HEIGHT)
 
 query_repeat_users = """
 SELECT 
@@ -233,7 +239,7 @@ HAVING COUNT(distinct tx_id) > 1
 ORDER BY "Txns Count" DESC
 LIMIT 100;
 """
-df_repeat_users = run_query(query_repeat_users)
+df_repeat_users = run_query(query_repeat_users).copy()
 df_repeat_users.index = df_repeat_users.index + 1  
 
 col5, col6 = st.columns(2)
@@ -241,8 +247,9 @@ with col5:
     st.plotly_chart(fig_failed, use_container_width=True)
 with col6:
     st.subheader("Top 100 Repeat Users By No of Repeat Txns")
+    
     st.dataframe(
         df_repeat_users,
         use_container_width=True,
-        height=fig_failed.layout.height if "height" in fig_failed.layout else 500
+        height=FIXED_HEIGHT
     )
