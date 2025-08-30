@@ -126,24 +126,30 @@ fig_new_users = px.bar(
 )
 
 query_retention = """
+with overview as (
 WITH FirstTransaction AS (
   SELECT 
     tx_from,
     MIN(block_timestamp) AS first_transaction_time
   FROM axelar.core.fact_transactions
-  WHERE tx_succeeded='TRUE'
+  where tx_succeeded='TRUE'
   GROUP BY tx_from
 )
+
 SELECT 
   DATE(FirstTransaction.first_transaction_time) AS "Cohort Date",
   DATE(transactions.block_timestamp) AS "Txns Date",
   COUNT(DISTINCT transactions.tx_from) AS "Retained Users"
 FROM axelar.core.fact_transactions AS transactions
-JOIN FirstTransaction 
-  ON transactions.tx_from = FirstTransaction.tx_from
+JOIN FirstTransaction ON transactions.tx_from = FirstTransaction.tx_from
 WHERE transactions.block_timestamp > FirstTransaction.first_transaction_time
 GROUP BY 1, 2
-ORDER BY 1, 2;
+ORDER BY 2)
+
+select "Txns Date", sum("Retained Users") as "Retained Users"
+from overview 
+group by 1
+order by 1
 """
 df_retention = run_query(query_retention)
 
@@ -154,7 +160,7 @@ fig_retention = px.line(
     title="User Retention per Day",
     color_discrete_sequence=["blue"]
 )
-fig_retention.update_traces(mode="lines")  # خطی بدون نقاط
+fig_retention.update_traces(mode="lines")  
 
 col1, col2 = st.columns(2)
 col1.plotly_chart(fig_new_users, use_container_width=True)
@@ -214,7 +220,7 @@ fig_failed = px.line(
     title="Failed Transactions per Day",
     color_discrete_sequence=["red"]
 )
-fig_failed.update_traces(mode="lines")  # فقط خطی بدون نقطه
+fig_failed.update_traces(mode="lines") 
 
 query_repeat_users = """
 SELECT 
@@ -228,7 +234,7 @@ ORDER BY "Txns Count" DESC
 LIMIT 100;
 """
 df_repeat_users = run_query(query_repeat_users)
-df_repeat_users.index = df_repeat_users.index + 1  # اندیس از 1 شروع شود
+df_repeat_users.index = df_repeat_users.index + 1  
 
 col5, col6 = st.columns(2)
 with col5:
