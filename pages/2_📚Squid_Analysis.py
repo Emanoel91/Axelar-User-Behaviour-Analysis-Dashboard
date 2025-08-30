@@ -1118,7 +1118,7 @@ fig1 = px.bar(
     barmode="stack",
     title="Normalized Number of Swaps by Symbol per Source Chain"
 )
-fig1.update_layout(height=600) 
+fig1.update_layout(height=800) 
 col1.plotly_chart(fig1, use_container_width=True)
 
 # Stacked Horizontal Bar: Normalized Volume of Transfers (USD)
@@ -1133,6 +1133,6 @@ fig2 = px.bar(
     barmode="stack",
     title="Normalized Volume of Swaps (USD) by Symbol per Source Chain"
 )
-fig2.update_layout(height=600) 
+fig2.update_layout(height=800) 
 col2.plotly_chart(fig2, use_container_width=True)
 
