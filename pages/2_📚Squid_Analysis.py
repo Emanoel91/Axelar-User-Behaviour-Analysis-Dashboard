@@ -1116,7 +1116,7 @@ fig1 = px.bar(
     color="Symbol",
     orientation="h",
     barmode="stack",
-    title="Normalized Swap Count by Symbol per Source Chain"
+    title="Normalized Swap Count by Token per Source Chain"
 )
 fig1.update_layout(height=1000) 
 col1.plotly_chart(fig1, use_container_width=True)
@@ -1131,7 +1131,7 @@ fig2 = px.bar(
     color="Symbol",
     orientation="h",
     barmode="stack",
-    title="Normalized Swap Volume (USD) by Symbol per Source Chain"
+    title="Normalized Swap Volume (USD) by Token per Source Chain"
 )
 fig2.update_layout(height=1000) 
 col2.plotly_chart(fig2, use_container_width=True)
