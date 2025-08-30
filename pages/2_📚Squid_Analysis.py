@@ -551,7 +551,7 @@ def load_pie_data(start_date, end_date):
     return pd.read_sql(query, conn)
 
 # --- Load Data ----------------------------------------------------------------------------------------------------
-# اینجا فقط دو تا آرگومان پاس می‌دیم (نه سه تا)
+
 df_pie = load_pie_data(start_date, end_date)
 
 # --- Layout -------------------------------------------------------------------------------------------------------
@@ -560,8 +560,8 @@ col1, col2 = st.columns(2)
 # Pie Chart for Volume
 fig1 = px.pie(
     df_pie, 
-    values="Swap_Volume",    # اسم ستون درست شد
-    names="Source_Chain",    # اسم ستون درست شد
+    values="SWAP_VOLUME",    
+    names="SOURCE_CHAIN",    
     title="Swap Volume By Source Chain ($USD)"
 )
 fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
@@ -569,8 +569,8 @@ fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=T
 # Pie Chart for Bridges
 fig2 = px.pie(
     df_pie, 
-    values="Swap_Count",     # اسم ستون درست شد
-    names="Source_Chain",    # اسم ستون درست شد
+    values="SWAP_COUNT",     
+    names="SOURCE_CHAIN",    
     title="Swap Count By Source Chain"
 )
 fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
