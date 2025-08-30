@@ -105,3 +105,152 @@ with col2:
 
 with col3:
     end_date = st.date_input("End Date", value=pd.to_datetime("2025-08-31"))
+
+# --- Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+@st.cache_data
+def load_kpi_data(timeframe, start_date, end_date):
+    
+    start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
+
+    query = f"""
+    WITH axelar_service AS (
+        -- Token Transfers
+        SELECT 
+            created_at, 
+            LOWER(data:send:original_source_chain) AS source_chain, 
+            LOWER(data:send:original_destination_chain) AS destination_chain,
+            recipient_address AS user, 
+            CASE 
+              WHEN IS_ARRAY(data:send:amount) THEN NULL
+              WHEN IS_OBJECT(data:send:amount) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:amount::STRING)
+              ELSE NULL
+            END AS amount,
+            CASE 
+              WHEN IS_ARRAY(data:send:amount) OR IS_ARRAY(data:link:price) THEN NULL
+              WHEN IS_OBJECT(data:send:amount) OR IS_OBJECT(data:link:price) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL AND TRY_TO_DOUBLE(data:link:price::STRING) IS NOT NULL 
+                THEN TRY_TO_DOUBLE(data:send:amount::STRING) * TRY_TO_DOUBLE(data:link:price::STRING)
+              ELSE NULL
+            END AS amount_usd,
+            CASE 
+              WHEN IS_ARRAY(data:send:fee_value) THEN NULL
+              WHEN IS_OBJECT(data:send:fee_value) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:fee_value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:fee_value::STRING)
+              ELSE NULL
+            END AS fee,
+            id, 
+            'Token Transfers' AS Service, 
+            data:link:asset::STRING AS raw_asset
+        FROM axelar.axelscan.fact_transfers
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+            sender_address ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+            OR sender_address ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%'
+            OR sender_address ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%'
+            OR sender_address ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%'
+            OR sender_address ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%'
+          )
+
+        UNION ALL
+
+        -- GMP
+        SELECT  
+            created_at,
+            data:call.chain::STRING AS source_chain,
+            data:call.returnValues.destinationChain::STRING AS destination_chain,
+            data:call.transaction.from::STRING AS user,
+            CASE 
+              WHEN IS_ARRAY(data:amount) OR IS_OBJECT(data:amount) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:amount::STRING)
+              ELSE NULL
+            END AS amount,
+            CASE 
+              WHEN IS_ARRAY(data:value) OR IS_OBJECT(data:value) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:value::STRING)
+              ELSE NULL
+            END AS amount_usd,
+            COALESCE(
+              CASE 
+                WHEN IS_ARRAY(data:gas:gas_used_amount) OR IS_OBJECT(data:gas:gas_used_amount) 
+                  OR IS_ARRAY(data:gas_price_rate:source_token.token_price.usd) OR IS_OBJECT(data:gas_price_rate:source_token.token_price.usd) 
+                THEN NULL
+                WHEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) IS NOT NULL 
+                  AND TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING) IS NOT NULL 
+                THEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) * TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING)
+                ELSE NULL
+              END,
+              CASE 
+                WHEN IS_ARRAY(data:fees:express_fee_usd) OR IS_OBJECT(data:fees:express_fee_usd) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING)
+                ELSE NULL
+              END
+            ) AS fee,
+            id, 
+            'GMP' AS Service, 
+            data:symbol::STRING AS raw_asset
+        FROM axelar.axelscan.fact_gmp 
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+            data:approved:returnValues:contractAddress ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+            OR data:approved:returnValues:contractAddress ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%'
+            OR data:approved:returnValues:contractAddress ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%'
+            OR data:approved:returnValues:contractAddress ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%'
+            OR data:approved:returnValues:contractAddress ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%'
+          )
+    )
+    SELECT 
+        COUNT(DISTINCT id) AS Number_of_Transfers, 
+        COUNT(DISTINCT user) AS Number_of_Users, 
+        ROUND(SUM(amount_usd)) AS Volume_of_Transfers,
+        round(((count(distinct created_at::date)*24*60*60)/count(distinct id))) as Avg_Swap_Time,
+        round(count(distinct id)/count(distinct user)) as Avg_Swap_Count_per_User,
+        round(sum(amount_usd)/count(distinct user)) as Avg_Swap_Volume_per_User
+    FROM axelar_service
+    WHERE created_at::date >= '{start_str}' 
+      AND created_at::date <= '{end_str}'
+    """
+
+    df = pd.read_sql(query, conn)
+    return df
+
+# --- Load Data ----------------------------------------------------------------------------------------------------
+df_kpi = load_kpi_data(timeframe, start_date, end_date)
+
+# --- KPI Row ------------------------------------------------------------------------------------------------------
+col1, col2, col3 = st.columns(3)
+
+col1.metric(
+    label="Total Swap Volume",
+    value=f"${df_kpi['VOLUME_OF_TRANSFERS'][0]:,}"
+)
+
+col2.metric(
+    label="Total Swap Count",
+    value=f"{df_kpi['NUMBER_OF_TRANSFERS'][0]:,} Txns"
+)
+
+col3.metric(
+    label="Unique Swapper Count",
+    value=f"{df_kpi['NUMBER_OF_USERS'][0]:,} Addresses"
+)
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric(
+    label="Total Swap Count",
+    value=f"{df_kpi['AVG_SWAP_TIME'][0]:,} Sec"
+)
+
+col2.metric(
+    label="Avg Swap Count per User",
+    value=f"{df_kpi['AVG_SWAP_COUNT_PER_USER'][0]:,} Txns"
+)
+
+col3.metric(
+    label="Avg Swap Volume per User",
+    value=f"${df_kpi['AVG_SWAP_VOLUME_PER_USER'][0]:,}"
+)
