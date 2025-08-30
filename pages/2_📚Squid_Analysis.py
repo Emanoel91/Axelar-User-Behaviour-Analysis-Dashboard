@@ -1138,10 +1138,10 @@ col2.plotly_chart(fig2, use_container_width=True)
 
 # --- Row 8 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 @st.cache_data
-def load_top_blocks(start_date, end_date):
-  query = f"""
-  with overview as (
-  WITH axelar_service AS (
+    def load_top_blocks(start_date, end_date):
+    query = f"""
+    with overview as (
+    WITH axelar_service AS (
   
   SELECT 
     created_at, 
