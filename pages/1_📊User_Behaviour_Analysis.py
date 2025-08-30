@@ -14,7 +14,6 @@ st.set_page_config(
     layout="wide"
 )
 
-st.set_option("server.fileWatcherType", "poll")
 # --- Title -----------------------------------------------------------------------------------------------------
 st.title("📊User Behaviour Analysis")
 
