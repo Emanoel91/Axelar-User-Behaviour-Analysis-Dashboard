@@ -557,8 +557,8 @@ col1, col2 = st.columns(2)
     # Pie Chart for Volume
     fig1 = px.pie(
         df_pie, 
-        values="SWAP_VOLUME", 
-        names="SOURCE_CHAIN", 
+        values="Swap Volume", 
+        names="Source_Chain", 
         title="Swap Volume By Source Chain ($USD)"
     )
     fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
@@ -566,8 +566,8 @@ col1, col2 = st.columns(2)
     # Pie Chart for Bridges
     fig2 = px.pie(
         df_pie, 
-        values="SWAP_COUNT", 
-        names="SOURCE_CHAIN", 
+        values="Swap_Count", 
+        names="Source_Chain", 
         title="Swap Count By Source Chain"
     )
     fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
