@@ -718,3 +718,207 @@ fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=T
 col1.plotly_chart(fig1, use_container_width=True)
 col2.plotly_chart(fig2, use_container_width=True)
 
+# --- Row 6 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+# --- Load Pie Data ------------------------------------------------------------------------------------------------
+@st.cache_data
+def load_pie_data_symbol(start_date, end_date):
+    start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
+
+    query = f"""
+    with overview as (
+    WITH axelar_service AS (
+        -- Token Transfers
+        SELECT 
+            created_at, 
+            LOWER(data:send:original_source_chain) AS source_chain, 
+            LOWER(data:send:original_destination_chain) AS destination_chain,
+            recipient_address AS user, 
+            CASE 
+              WHEN IS_ARRAY(data:send:amount) THEN NULL
+              WHEN IS_OBJECT(data:send:amount) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:amount::STRING)
+              ELSE NULL
+            END AS amount,
+            CASE 
+              WHEN IS_ARRAY(data:send:amount) OR IS_ARRAY(data:link:price) THEN NULL
+              WHEN IS_OBJECT(data:send:amount) OR IS_OBJECT(data:link:price) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL AND TRY_TO_DOUBLE(data:link:price::STRING) IS NOT NULL 
+                THEN TRY_TO_DOUBLE(data:send:amount::STRING) * TRY_TO_DOUBLE(data:link:price::STRING)
+              ELSE NULL
+            END AS amount_usd,
+            CASE 
+              WHEN IS_ARRAY(data:send:fee_value) THEN NULL
+              WHEN IS_OBJECT(data:send:fee_value) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:send:fee_value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:fee_value::STRING)
+              ELSE NULL
+            END AS fee,
+            id, 
+            'Token Transfers' AS Service, 
+            data:link:asset::STRING AS raw_asset
+        FROM axelar.axelscan.fact_transfers
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+            sender_address ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+            OR sender_address ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%'
+            OR sender_address ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%'
+            OR sender_address ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%'
+            OR sender_address ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%'
+          )
+
+        UNION ALL
+
+        -- GMP
+        SELECT  
+            created_at,
+            data:call.chain::STRING AS source_chain,
+            data:call.returnValues.destinationChain::STRING AS destination_chain,
+            data:call.transaction.from::STRING AS user,
+            CASE 
+              WHEN IS_ARRAY(data:amount) OR IS_OBJECT(data:amount) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:amount::STRING)
+              ELSE NULL
+            END AS amount,
+            CASE 
+              WHEN IS_ARRAY(data:value) OR IS_OBJECT(data:value) THEN NULL
+              WHEN TRY_TO_DOUBLE(data:value::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:value::STRING)
+              ELSE NULL
+            END AS amount_usd,
+            COALESCE(
+              CASE 
+                WHEN IS_ARRAY(data:gas:gas_used_amount) OR IS_OBJECT(data:gas:gas_used_amount) 
+                  OR IS_ARRAY(data:gas_price_rate:source_token.token_price.usd) OR IS_OBJECT(data:gas_price_rate:source_token.token_price.usd) 
+                THEN NULL
+                WHEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) IS NOT NULL 
+                  AND TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING) IS NOT NULL 
+                THEN TRY_TO_DOUBLE(data:gas:gas_used_amount::STRING) * TRY_TO_DOUBLE(data:gas_price_rate:source_token.token_price.usd::STRING)
+                ELSE NULL
+              END,
+              CASE 
+                WHEN IS_ARRAY(data:fees:express_fee_usd) OR IS_OBJECT(data:fees:express_fee_usd) THEN NULL
+                WHEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:fees:express_fee_usd::STRING)
+                ELSE NULL
+              END
+            ) AS fee,
+            id, 
+            'GMP' AS Service, 
+            data:symbol::STRING AS raw_asset
+        FROM axelar.axelscan.fact_gmp 
+        WHERE status = 'executed'
+          AND simplified_status = 'received'
+          AND (
+            data:approved:returnValues:contractAddress ilike '%0xce16F69375520ab01377ce7B88f5BA8C48F8D666%' 
+            OR data:approved:returnValues:contractAddress ilike '%0x492751eC3c57141deb205eC2da8bFcb410738630%'
+            OR data:approved:returnValues:contractAddress ilike '%0xDC3D8e1Abe590BCa428a8a2FC4CfDbD1AcF57Bd9%'
+            OR data:approved:returnValues:contractAddress ilike '%0xdf4fFDa22270c12d0b5b3788F1669D709476111E%'
+            OR data:approved:returnValues:contractAddress ilike '%0xe6B3949F9bBF168f4E3EFc82bc8FD849868CC6d8%'
+          )
+    )
+    SELECT created_at, id, user, amount_usd, CASE 
+      WHEN raw_asset='arb-wei' THEN 'ARB'
+      WHEN raw_asset='avalanche-uusdc' THEN 'Avalanche USDC'
+      WHEN raw_asset='avax-wei' THEN 'AVAX'
+      WHEN raw_asset='bnb-wei' THEN 'BNB'
+      WHEN raw_asset='busd-wei' THEN 'BUSD'
+      WHEN raw_asset='cbeth-wei' THEN 'cbETH'
+      WHEN raw_asset='cusd-wei' THEN 'cUSD'
+      WHEN raw_asset='dai-wei' THEN 'DAI'
+      WHEN raw_asset='dot-planck' THEN 'DOT'
+      WHEN raw_asset='eeur' THEN 'EURC'
+      WHEN raw_asset='ern-wei' THEN 'ERN'
+      WHEN raw_asset='eth-wei' THEN 'ETH'
+      WHEN raw_asset ILIKE 'factory/sei10hub%' THEN 'SEILOR'
+      WHEN raw_asset='fil-wei' THEN 'FIL'
+      WHEN raw_asset='frax-wei' THEN 'FRAX'
+      WHEN raw_asset='ftm-wei' THEN 'FTM'
+      WHEN raw_asset='glmr-wei' THEN 'GLMR'
+      WHEN raw_asset='hzn-wei' THEN 'HZN'
+      WHEN raw_asset='link-wei' THEN 'LINK'
+      WHEN raw_asset='matic-wei' THEN 'MATIC'
+      WHEN raw_asset='mkr-wei' THEN 'MKR'
+      WHEN raw_asset='mpx-wei' THEN 'MPX'
+      WHEN raw_asset='oath-wei' THEN 'OATH'
+      WHEN raw_asset='op-wei' THEN 'OP'
+      WHEN raw_asset='orbs-wei' THEN 'ORBS'
+      WHEN raw_asset='factory/sei10hud5e5er4aul2l7sp2u9qp2lag5u4xf8mvyx38cnjvqhlgsrcls5qn5ke/seilor' THEN 'SEILOR'
+      WHEN raw_asset='pepe-wei' THEN 'PEPE'
+      WHEN raw_asset='polygon-uusdc' THEN 'Polygon USDC'
+      WHEN raw_asset='reth-wei' THEN 'rETH'
+      WHEN raw_asset='ring-wei' THEN 'RING'
+      WHEN raw_asset='shib-wei' THEN 'SHIB'
+      WHEN raw_asset='sonne-wei' THEN 'SONNE'
+      WHEN raw_asset='stuatom' THEN 'stATOM'
+      WHEN raw_asset='uatom' THEN 'ATOM'
+      WHEN raw_asset='uaxl' THEN 'AXL'
+      WHEN raw_asset='ukuji' THEN 'KUJI'
+      WHEN raw_asset='ulava' THEN 'LAVA'
+      WHEN raw_asset='uluna' THEN 'LUNA'
+      WHEN raw_asset='ungm' THEN 'NGM'
+      WHEN raw_asset='uni-wei' THEN 'UNI'
+      WHEN raw_asset='uosmo' THEN 'OSMO'
+      WHEN raw_asset='usomm' THEN 'SOMM'
+      WHEN raw_asset='ustrd' THEN 'STRD'
+      WHEN raw_asset='utia' THEN 'TIA'
+      WHEN raw_asset='uumee' THEN 'UMEE'
+      WHEN raw_asset='uusd' THEN 'USTC'
+      WHEN raw_asset='uusdc' THEN 'USDC'
+      WHEN raw_asset='uusdt' THEN 'USDT'
+      WHEN raw_asset='vela-wei' THEN 'VELA'
+      WHEN raw_asset='wavax-wei' THEN 'WAVAX'
+      WHEN raw_asset='wbnb-wei' THEN 'WBNB'
+      WHEN raw_asset='wbtc-satoshi' THEN 'WBTC'
+      WHEN raw_asset='weth-wei' THEN 'WETH'
+      WHEN raw_asset='wfil-wei' THEN 'WFIL'
+      WHEN raw_asset='wftm-wei' THEN 'WFTM'
+      WHEN raw_asset='wglmr-wei' THEN 'WGLMR'
+      WHEN raw_asset='wmai-wei' THEN 'WMAI'
+      WHEN raw_asset='wmatic-wei' THEN 'WMATIC'
+      WHEN raw_asset='wsteth-wei' THEN 'wstETH'
+      WHEN raw_asset='yield-eth-wei' THEN 'yieldETH' 
+      else raw_asset end as Symbol
+        
+    FROM axelar_service
+    WHERE created_at::date >= '{start_str}' 
+      AND created_at::date <= '{end_str}')
+
+      select Symbol,
+        COUNT(DISTINCT id) AS Swap_Count, 
+        ROUND(SUM(amount_usd)) AS Swap_Volume
+    FROM axelar_service
+    GROUP BY 1
+    ORDER BY 2 desc
+    
+    """
+
+    return pd.read_sql(query, conn)
+
+# --- Load Data ----------------------------------------------------------------------------------------------------
+
+df_pie_symbol = load_pie_data_symbol(start_date, end_date)
+
+# --- Layout -------------------------------------------------------------------------------------------------------
+col1, col2 = st.columns(2)
+
+# Pie Chart for Volume
+fig1 = px.pie(
+    df_pie_symbol, 
+    values="SWAP_VOLUME",    
+    names="SYMBOL",    
+    title="Swap Volume By Token ($USD)"
+)
+fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
+
+# Pie Chart for Bridges
+fig2 = px.pie(
+    df_pie_symbol, 
+    values="SWAP_COUNT",     
+    names="SYMBOL",    
+    title="Swap Count By Token"
+)
+fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
+
+# display charts
+col1.plotly_chart(fig1, use_container_width=True)
+col2.plotly_chart(fig2, use_container_width=True)
+
