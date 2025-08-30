@@ -886,6 +886,7 @@ def load_pie_data_symbol(start_date, end_date):
         COUNT(DISTINCT id) AS Swap_Count, 
         ROUND(SUM(amount_usd)) AS Swap_Volume
     FROM overview
+    where symbol is not null
     GROUP BY 1
     ORDER BY 2 desc
     
