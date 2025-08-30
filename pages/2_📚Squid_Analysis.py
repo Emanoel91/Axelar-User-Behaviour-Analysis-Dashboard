@@ -1139,8 +1139,9 @@ col2.plotly_chart(fig2, use_container_width=True)
 # --- Row 8 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 @st.cache_data
 def load_top_blocks(start_date, end_date):
-    with overview as (
-WITH axelar_service AS (
+  query = f"""
+  with overview as (
+  WITH axelar_service AS (
   
   SELECT 
     created_at, 
@@ -1246,8 +1247,8 @@ select user AS "Swapper", count(distinct id) as "Swap Count",
 round(sum(amount_usd),1) as "Swap Volume", count(distinct raw_asset) as "Swapped Token Count",
 count(distinct (source_chain || '➡' ||destination_chain)) as "Path Count", round(sum(fee),1) as "Paid Swap Fee"
 from overview
-WHERE block_timestamp::date >= '{start_date}'
-AND block_timestamp::date <= '{end_date}'
+WHERE created_at::date >= '{start_date}'
+AND created_at::date <= '{end_date}'
 group by 1
 order by 2 desc 
 limit 20
