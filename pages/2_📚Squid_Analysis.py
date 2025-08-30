@@ -441,6 +441,7 @@ with col2:
     st.plotly_chart(fig2, use_container_width=True)
     
 # --- Row 4 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+# --- Load Pie Data ------------------------------------------------------------------------------------------------
 @st.cache_data
 def load_pie_data(start_date, end_date):
     start_str = start_date.strftime("%Y-%m-%d")
@@ -550,28 +551,30 @@ def load_pie_data(start_date, end_date):
     return pd.read_sql(query, conn)
 
 # --- Load Data ----------------------------------------------------------------------------------------------------
+# اینجا فقط دو تا آرگومان پاس می‌دیم (نه سه تا)
 df_pie = load_pie_data(start_date, end_date)
 
+# --- Layout -------------------------------------------------------------------------------------------------------
 col1, col2 = st.columns(2)
 
-    # Pie Chart for Volume
-    fig1 = px.pie(
-        df_pie, 
-        values="Swap Volume", 
-        names="Source_Chain", 
-        title="Swap Volume By Source Chain ($USD)"
-    )
-    fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
+# Pie Chart for Volume
+fig1 = px.pie(
+    df_pie, 
+    values="Swap_Volume",    # اسم ستون درست شد
+    names="Source_Chain",    # اسم ستون درست شد
+    title="Swap Volume By Source Chain ($USD)"
+)
+fig1.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
 
-    # Pie Chart for Bridges
-    fig2 = px.pie(
-        df_pie, 
-        values="Swap_Count", 
-        names="Source_Chain", 
-        title="Swap Count By Source Chain"
-    )
-    fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
+# Pie Chart for Bridges
+fig2 = px.pie(
+    df_pie, 
+    values="Swap_Count",     # اسم ستون درست شد
+    names="Source_Chain",    # اسم ستون درست شد
+    title="Swap Count By Source Chain"
+)
+fig2.update_traces(textinfo="percent+label", textposition="inside", automargin=True)
 
-    # display charts
-    col1.plotly_chart(fig1, use_container_width=True)
-    col2.plotly_chart(fig2, use_container_width=True)
+# display charts
+col1.plotly_chart(fig1, use_container_width=True)
+col2.plotly_chart(fig2, use_container_width=True)
