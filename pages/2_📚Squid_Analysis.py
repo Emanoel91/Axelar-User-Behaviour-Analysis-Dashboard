@@ -550,7 +550,7 @@ def load_pie_data(start_date, end_date):
     return pd.read_sql(query, conn)
 
 # --- Load Data ----------------------------------------------------------------------------------------------------
-df_pie = load_pie_data(timeframe, start_date, end_date)
+df_pie = load_pie_data(start_date, end_date)
 
 col1, col2 = st.columns(2)
 
