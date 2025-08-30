@@ -245,7 +245,7 @@ col5, col6 = st.columns(2)
 with col5:
     st.plotly_chart(fig_failed, use_container_width=True)
 with col6:
-    st.subheader("Top 100 Repeat Users By No of Repeat Txns")
+    st.subheader("Top 100 Users By No of Repeat Txns")
     
     st.dataframe(
         df_repeat_users,
