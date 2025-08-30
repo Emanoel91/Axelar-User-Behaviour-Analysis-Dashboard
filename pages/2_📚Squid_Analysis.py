@@ -1258,5 +1258,11 @@ def load_users(start_date, end_date):
     return pd.read_sql(query, conn)
 
 top_users = load_users(start_date, end_date)
+
+top_users.index = top_users.index + 1
+
+numeric_cols = top_users.select_dtypes(include='number').columns
+top_users[numeric_cols] = top_users[numeric_cols].applymap(lambda x: f"{x:,}")
+
 st.markdown("<h4 style='font-size:18px;'>🏆Top 20 Addresses by Activity Levels</h4>", unsafe_allow_html=True)
 st.dataframe(top_users, use_container_width=True)
