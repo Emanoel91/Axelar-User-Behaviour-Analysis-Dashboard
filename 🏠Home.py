@@ -11,8 +11,8 @@ st.set_page_config(
 st.markdown(
     """
     <div style="display: flex; align-items: center; gap: 15px;">
-        <img src="https://img.cryptorank.io/coins/squid1675241862798.png" alt="Squid Logo" style="width:60px; height:60px;">
-        <h1 style="margin: 0;">Squidrouter: Cross Chain & School NFT Dashboard</h1>
+        <img src="https://img.cryptorank.io/coins/axelar1663924228506.png" alt="Axelar Logo" style="width:60px; height:60px;">
+        <h1 style="margin: 0;">Axelar User Behaviour Analysis Dashboard</h1>
     </div>
     """,
     unsafe_allow_html=True
@@ -35,12 +35,13 @@ st.markdown(
 st.markdown(
     """
     <div style="background-color: #cff1e4; padding: 15px; border-radius: 10px; border: 1px solid #cff1e4;">
-        Squid Bridge, powered by the Axelar network, is a cross-chain protocol enabling seamless token swaps, transfers, and advanced DeFi 
-        interactions across 80+ blockchains with minimal fees and 15-20 second transaction times. Unlike traditional bridges, it avoids 
-        locked assets, reducing security risks, and supports developer-friendly integrations for applications like staking, NFT purchases, 
-        and yield farming. Users can access it via app.squidrouter.com, while developers can leverage its SDK and API for building multi-chain dApps.
-
- 
+        Axelar is not just a network but an "internet of blockchains," a universal platform that fosters seamless interactions between disparate 
+        blockchain ecosystems through General Message Passing (GMP) and Turing-complete cross-chain computation.
+        At the heart of Axelar's security is its proof-of-stake consensus, upheld by a dynamic validator set. This ensures that 
+        cross-chain messages, integral to the network's function, are securely managed and verified. The AXL token ($AXL) is the 
+        linchpin of this ecosystem, underpinning staking, governance, and the fee structure that sustains the network's operations.
+        This dashboard provides a window into the Axelar ecosystem, highlighting the flow and frequency of cross-chain transactions, 
+        the distribution and utility of tokens across networks, and the engagement level of users within the ecosystem.
 </div>
     """,
     unsafe_allow_html=True
