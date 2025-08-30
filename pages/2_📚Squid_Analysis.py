@@ -355,7 +355,7 @@ def load_time_series_data(timeframe, start_date, end_date):
         COUNT(DISTINCT id) AS Swap_Count, 
         COUNT(DISTINCT user) AS Swapper_Count, 
         ROUND(SUM(amount_usd)) AS Swap_Volume,
-        round((COUNT(DISTINCT id)/COUNT(DISTINCT user)),1) as Swap_Count_per_Swapper
+        round(sum(amount_usd)/count(distinct user)) as Swap_Volume_per_Swapper
     FROM axelar_service
     WHERE created_at::date >= '{start_str}' 
       AND created_at::date <= '{end_str}'
@@ -393,11 +393,11 @@ with col1:
 with col2:
     fig2 = go.Figure()
     fig2.add_bar(x=df_ts["DATE"], y=df_ts["SWAPPER_COUNT"], name="Swapper Count", yaxis="y1")
-    fig2.add_trace(go.Scatter(x=df_ts["DATE"], y=df_ts["SWAP_COUNT_PER_SWAPPER"], name="Swap Count per Swapper", mode="lines+markers", yaxis="y2"))
+    fig2.add_trace(go.Scatter(x=df_ts["DATE"], y=df_ts["SWAP_VOLUME_PER_SWAPPER"], name="Swap Volume per Swapper", mode="lines+markers", yaxis="y2"))
     fig2.update_layout(
         title="Swappers Over Time",
         yaxis=dict(title="Wallet count"),
-        yaxis2=dict(title="Txns count", overlaying="y", side="right"),
+        yaxis2=dict(title="$USD", overlaying="y", side="right"),
         xaxis=dict(title=" "),
         barmode="group",
         legend=dict(
