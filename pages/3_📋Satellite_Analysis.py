@@ -309,7 +309,7 @@ def get_table_data(_conn, start_date, end_date):
     limit 100
     """
     df = pd.read_sql(query, _conn)
-    return df.iloc[0]
+    return df
 
 # --- Load Data ----------------------------------------------------------------------------------------------------
 table_data = get_table_data(conn, start_date, end_date)
