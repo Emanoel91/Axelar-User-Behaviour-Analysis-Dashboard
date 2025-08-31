@@ -138,7 +138,7 @@ WITH FirstTransaction AS (
 
 SELECT 
   DATE(FirstTransaction.first_transaction_time) AS "Cohort Date",
-  DATE(transactions.block_timestamp) AS "Txns Date",
+  DATE(transactions.block_timestamp) AS "Date",
   COUNT(DISTINCT transactions.tx_from) AS "Retained Users"
 FROM axelar.core.fact_transactions AS transactions
 JOIN FirstTransaction ON transactions.tx_from = FirstTransaction.tx_from
@@ -146,7 +146,7 @@ WHERE transactions.block_timestamp > FirstTransaction.first_transaction_time
 GROUP BY 1, 2
 ORDER BY 2)
 
-select "Txns Date", sum("Retained Users") as "Retained Users"
+select "Date", sum("Retained Users") as "Retained Users"
 from overview 
 group by 1
 order by 1
@@ -155,7 +155,7 @@ df_retention = run_query(query_retention)
 
 fig_retention = px.line(
     df_retention,
-    x="Txns Date",
+    x="Date",
     y="Retained Users",
     title="User Retention per Day",
     color_discrete_sequence=["blue"]
