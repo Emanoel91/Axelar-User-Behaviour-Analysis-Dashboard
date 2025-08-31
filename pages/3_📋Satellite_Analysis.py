@@ -354,7 +354,7 @@ def get_path_data(_conn, start_date, end_date):
       source_chain || '➡' || destination_chain as "🔀Path",
       count(distinct sender) as "👥Number of AddressES",
       COUNT(DISTINCT tx_hash) AS "🚀Number of Transfers", 
-      round(sum(amount_usd)) as "💸Volume of Transfers ($USD)"
+      round(sum(amount_usd)) as "💸Volume of Transfers ($USD)",
       count(distinct date::date) as "📋#Activity Days",
       min(date::date) as "📅First Transfer Date"
     FROM overview
