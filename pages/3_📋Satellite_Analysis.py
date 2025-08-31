@@ -274,7 +274,7 @@ def get_table_data(_conn, start_date, end_date):
       WITH tab1 AS (
         SELECT block_timestamp::date AS date, tx_hash, source_chain, destination_chain, sender, token_symbol
         FROM AXELAR.DEFI.EZ_BRIDGE_SATELLITE
-        WHERE block_timestamp::date >= '{start_date}' AND created_at::date <= '{end_date}'
+        WHERE block_timestamp::date >= '{start_date}' AND block_timestamp::date <= '{end_date}'
       ),
       tab2 AS (
         SELECT 
