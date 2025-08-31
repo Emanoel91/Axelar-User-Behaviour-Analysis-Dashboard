@@ -175,3 +175,72 @@ with col2:
 with col3:
     st.markdown("**Average Daily Volume ($USD)**")
     st.markdown(f"${kpi_df['AVG_DAILY_VOLUME']/1000:.1f}K")
+
+# --- Row 3 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+@st.cache_data
+def load_new_time_series_data(timeframe, start_date, end_date):
+    start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
+
+    query = f"""
+    SELECT 
+    DATE_TRUNC('{timeframe}', block_timestamp) AS registration_date, 
+    COUNT(DISTINCT sender) AS new_users
+    FROM axelar.defi.ez_bridge_satellite
+    WHERE block_timestamp::date >= '{start_str}' 
+          AND block_timestamp::date <= '{end_str}'
+    GROUP BY 1
+    ORDER BY 1
+    """
+
+    return pd.read_sql(query, conn)
+
+@st.cache_data
+def load_ret_time_series_data(timeframe, start_date, end_date):
+    start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
+
+    query = f"""
+    SELECT DATE_TRUNC('{timeframe}', block_timestamp) AS activity_date, 
+    COUNT(DISTINCT sender) AS returning_users
+    FROM axelar.defi.ez_bridge_satellite
+    WHERE (DATE_TRUNC('day', block_timestamp) > (SELECT MIN(DATE_TRUNC('day', block_timestamp)) 
+    FROM axelar.defi.ez_bridge_satellite))
+    AND (block_timestamp::date >= '{start_str}' AND block_timestamp::date <= '{end_str}')
+    GROUP BY 1
+    ORDER BY 1
+    """
+
+    return pd.read_sql(query, conn)
+
+# --- Load Data ----------------------------------------------------------------------------------------------------
+df_new_user = load_new_time_series_data(timeframe, start_date, end_date)
+df_ret_user = load_ret_time_series_data(timeframe, start_date, end_date)
+# --- Charts in One Row ---------------------------------------------------------------------------------------------
+
+col1, col2= st.columns(2)
+
+with col1:
+    fig1 = px.bar(
+        df_new_user,
+        x="REGISTRATION_DATE",
+        y="NEW_USERS",
+        title="Trend of New Users",
+        labels={"NEW_USERS": "wallet count", "REGISTRATION_DATE": " "},
+        color_discrete_sequence=["#e2fb43"]
+    )
+    fig1.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
+    st.plotly_chart(fig1, use_container_width=True)
+
+with col2:
+    fig2 = px.bar(
+        df_ret_user,
+        x="ACTIVITY_DATE",
+        y="RETURNING_USERS",
+        title="Trend of Returning Users",
+        labels={"RETURNING_USERS": "wallet count", "ACTIVITY_DATE": " "},
+        color_discrete_sequence=["#e2fb43"]
+    )
+    fig2.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
+    st.plotly_chart(fig2, use_container_width=True)
+
