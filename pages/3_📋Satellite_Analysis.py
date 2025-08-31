@@ -177,56 +177,66 @@ with col3:
     st.markdown(f"${kpi_df['AVG_DAILY_VOLUME']/1000:.1f}K")
 
 # --- Row 3 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+
 @st.cache_data
-def load_new_time_series_data(timeframe, start_date, end_date):
+def load_user_time_series_data(timeframe, start_date, end_date):
     start_str = start_date.strftime("%Y-%m-%d")
     end_str = end_date.strftime("%Y-%m-%d")
 
     query = f"""
-    SELECT 
-    DATE_TRUNC('{timeframe}', block_timestamp) AS registration_date, 
-    COUNT(DISTINCT sender) AS new_users
+    WITH UserRegistrations AS (
+    SELECT
+        sender,
+        MIN(DATE_TRUNC('{timeframe}', block_timestamp)) AS first_registration_date
     FROM axelar.defi.ez_bridge_satellite
-    WHERE block_timestamp::date >= '{start_str}' 
-          AND block_timestamp::date <= '{end_str}'
-    GROUP BY 1
-    ORDER BY 1
-    """
-
-    return pd.read_sql(query, conn)
-
-@st.cache_data
-def load_ret_time_series_data(timeframe, start_date, end_date):
-    start_str = start_date.strftime("%Y-%m-%d")
-    end_str = end_date.strftime("%Y-%m-%d")
-
-    query = f"""
-    SELECT DATE_TRUNC('{timeframe}', block_timestamp) AS activity_date, 
-    COUNT(DISTINCT sender) AS returning_users
+    GROUP BY sender
+),
+date_activity AS (
+    SELECT
+        DATE_TRUNC('{timeframe}', block_timestamp) AS activity_date,
+        sender
     FROM axelar.defi.ez_bridge_satellite
-    WHERE (DATE_TRUNC('day', block_timestamp) > (SELECT MIN(DATE_TRUNC('day', block_timestamp)) 
-    FROM axelar.defi.ez_bridge_satellite))
-    AND (block_timestamp::date >= '{start_str}' AND block_timestamp::date <= '{end_str}')
-    GROUP BY 1
-    ORDER BY 1
+    GROUP BY DATE_TRUNC('{timeframe}', block_timestamp), sender
+),
+NewAndReturning AS (
+    SELECT
+        a.activity_date,
+        a.sender,
+        CASE 
+            WHEN a.activity_date = u.first_registration_date THEN 'New'
+            ELSE 'Returning'
+        END AS user_type
+    FROM date_activity a
+    JOIN UserRegistrations u ON a.sender = u.sender
+)
+
+SELECT
+    activity_date AS "Date",
+    COUNT(DISTINCT CASE WHEN user_type = 'New' THEN sender ELSE NULL END) AS "New Users",
+    COUNT(DISTINCT CASE WHEN user_type = 'Returning' THEN sender ELSE NULL END) AS "Returning Users",
+    COUNT(DISTINCT sender) AS "Total Users"
+FROM NewAndReturning
+WHERE activity_date::date >= '{start_str}' AND activity_date::date <= '{end_str}'
+GROUP BY 1
+ORDER BY 1
     """
 
     return pd.read_sql(query, conn)
 
 # --- Load Data ----------------------------------------------------------------------------------------------------
-df_new_user = load_new_time_series_data(timeframe, start_date, end_date)
-df_ret_user = load_ret_time_series_data(timeframe, start_date, end_date)
+df_user = load_user_time_series_data(timeframe, start_date, end_date)
+
 # --- Charts in One Row ---------------------------------------------------------------------------------------------
 
 col1, col2= st.columns(2)
 
 with col1:
     fig1 = px.bar(
-        df_new_user,
-        x="REGISTRATION_DATE",
+        df_user,
+        x="DATE",
         y="NEW_USERS",
         title="Trend of New Users",
-        labels={"NEW_USERS": "wallet count", "REGISTRATION_DATE": " "},
+        labels={"NEW_USERS": "wallet count", "DATE": " "},
         color_discrete_sequence=["#e2fb43"]
     )
     fig1.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
@@ -234,11 +244,11 @@ with col1:
 
 with col2:
     fig2 = px.bar(
-        df_ret_user,
-        x="ACTIVITY_DATE",
+        df_user,
+        x="DATE",
         y="RETURNING_USERS",
         title="Trend of Returning Users",
-        labels={"RETURNING_USERS": "wallet count", "ACTIVITY_DATE": " "},
+        labels={"RETURNING_USERS": "wallet count", "DATE": " "},
         color_discrete_sequence=["#e2fb43"]
     )
     fig2.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
