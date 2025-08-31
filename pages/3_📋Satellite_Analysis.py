@@ -320,3 +320,57 @@ df_display = table_data.copy()
 df_display.index = df_display.index + 1
 df_display = df_display.applymap(lambda x: f"{x:,}" if isinstance(x, (int, float)) else x)
 st.dataframe(df_display, use_container_width=True)
+# ---Row 4 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+@st.cache_data
+def get_path_data(_conn, start_date, end_date):
+    query = f"""
+    WITH overview AS (
+      WITH tab1 AS (
+        SELECT block_timestamp::date AS date, tx_hash, source_chain, destination_chain, sender, token_symbol
+        FROM AXELAR.DEFI.EZ_BRIDGE_SATELLITE
+        WHERE block_timestamp::date >= '{start_date}' AND block_timestamp::date <= '{end_date}'
+      ),
+      tab2 AS (
+        SELECT 
+            created_at::date AS date, 
+            LOWER(data:send:original_source_chain) AS source_chain, 
+            LOWER(data:send:original_destination_chain) AS destination_chain,
+            sender_address AS user,
+            CASE WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL THEN TRY_TO_DOUBLE(data:send:amount::STRING) END AS amount,
+            CASE 
+              WHEN TRY_TO_DOUBLE(data:send:amount::STRING) IS NOT NULL AND TRY_TO_DOUBLE(data:link:price::STRING) IS NOT NULL 
+              THEN TRY_TO_DOUBLE(data:send:amount::STRING) * TRY_TO_DOUBLE(data:link:price::STRING) END AS amount_usd,
+            SPLIT_PART(id, '_', 1) as tx_hash
+        FROM axelar.axelscan.fact_transfers
+        WHERE status = 'executed' 
+          AND simplified_status = 'received'
+          AND created_at::date >= '{start_date}' AND created_at::date <= '{end_date}'
+      )
+      SELECT tab1.date, tab1.tx_hash, tab1.source_chain, tab1.destination_chain, sender, token_symbol, amount, amount_usd
+      FROM tab1 
+      LEFT JOIN tab2 ON tab1.tx_hash=tab2.tx_hash
+    )
+    SELECT 
+      source_chain || '➡' || destination_chain as "🔀Path",
+      count(distinct sender) as "👥Number of AddressES",
+      COUNT(DISTINCT tx_hash) AS "🚀Number of Transfers", 
+      count(distinct (source_chain || '➡' || destination_chain)) as "🔀Number of Unique Paths",
+      count(distinct date::date) as "📋#Activity Days",
+      min(date::date) as "📅First Transfer Date"
+    FROM overview
+    group by 1
+    order by 2 desc 
+    """
+    df = pd.read_sql(query, _conn)
+    return df
+
+# --- Load Data ----------------------------------------------------------------------------------------------------
+path_data = get_path_data(conn, start_date, end_date)
+
+# --- Display Table ------------------------------------------------------------------------------------------------
+st.subheader("📡Path Monitoring")
+
+df_display = path_data.copy()
+df_display.index = df_display.index + 1
+df_display = df_display.applymap(lambda x: f"{x:,}" if isinstance(x, (int, float)) else x)
+st.dataframe(df_display, use_container_width=True)
