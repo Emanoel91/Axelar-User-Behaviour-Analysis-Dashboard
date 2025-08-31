@@ -299,10 +299,9 @@ def get_table_data(_conn, start_date, end_date):
     SELECT 
       sender as "👥Address",
       COUNT(DISTINCT tx_hash) AS "🚀Number of Transfers", 
-      ROUND(SUM(amount_usd)) AS "💸Volume of Transfers ($USD)",
-      count(distinct token_symbol) as "💎Number of Transferred Tokens",
       count(distinct (source_chain || '➡' || destination_chain)) as "🔀Number of Unique Paths",
-      count(distinct date::date) as "📋#Activity Days"
+      count(distinct date::date) as "📋#Activity Days",
+      min(date::date) as "📅First Transfer Date"
     FROM overview
     group by 1
     order by 2 desc 
