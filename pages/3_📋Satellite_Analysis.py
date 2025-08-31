@@ -228,7 +228,7 @@ df_user = load_user_time_series_data(timeframe, start_date, end_date)
 
 # --- Charts in One Row ---------------------------------------------------------------------------------------------
 
-col1, col2= st.columns(2)
+col1, col2, col3= st.columns(3)
 
 with col1:
     fig1 = px.bar(
@@ -253,4 +253,16 @@ with col2:
     )
     fig2.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
     st.plotly_chart(fig2, use_container_width=True)
+
+with col3:
+    fig3 = px.bar(
+        df_user,
+        x="Date",
+        y="Total Users",
+        title="Total Users Over Time",
+        labels={"Total Users": "wallet count", "Date": " "},
+        color_discrete_sequence=["#717aff"]
+    )
+    fig3.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
+    st.plotly_chart(fig3, use_container_width=True)
 
