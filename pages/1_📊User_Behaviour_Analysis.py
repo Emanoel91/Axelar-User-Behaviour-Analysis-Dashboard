@@ -17,7 +17,6 @@ st.set_page_config(
 # --- Title -----------------------------------------------------------------------------------------------------
 st.title("📊User Behaviour Analysis")
 
-st.info("📊Charts initially display data for a default time range. Select a custom range to view results for your desired period.")
 st.info("⏳On-chain data retrieval may take a few moments. Please wait while the results load.")
 
 # --- Sidebar Footer Slightly Left-Aligned ---
