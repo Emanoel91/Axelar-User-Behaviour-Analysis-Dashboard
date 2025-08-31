@@ -237,7 +237,7 @@ with col1:
         y="New Users",
         title="Trend of New Users",
         labels={"New Users": "wallet count", "Date": " "},
-        color_discrete_sequence=["#e2fb43"]
+        color_discrete_sequence=["#717aff"]
     )
     fig1.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
     st.plotly_chart(fig1, use_container_width=True)
@@ -249,7 +249,7 @@ with col2:
         y="Returning Users",
         title="Trend of Returning Users",
         labels={"Returning Users": "wallet count", "Date": " "},
-        color_discrete_sequence=["#e2fb43"]
+        color_discrete_sequence=["#717aff"]
     )
     fig2.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
     st.plotly_chart(fig2, use_container_width=True)
