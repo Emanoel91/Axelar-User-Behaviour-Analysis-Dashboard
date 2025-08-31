@@ -233,10 +233,10 @@ col1, col2= st.columns(2)
 with col1:
     fig1 = px.bar(
         df_user,
-        x="DATE",
-        y="NEW_USERS",
+        x="Date",
+        y="New Users",
         title="Trend of New Users",
-        labels={"NEW_USERS": "wallet count", "DATE": " "},
+        labels={"New Users": "wallet count", "Date": " "},
         color_discrete_sequence=["#e2fb43"]
     )
     fig1.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
@@ -245,10 +245,10 @@ with col1:
 with col2:
     fig2 = px.bar(
         df_user,
-        x="DATE",
-        y="RETURNING_USERS",
+        x="Date",
+        y="Returning Users",
         title="Trend of Returning Users",
-        labels={"RETURNING_USERS": "wallet count", "DATE": " "},
+        labels={"Returning Users": "wallet count", "Date": " "},
         color_discrete_sequence=["#e2fb43"]
     )
     fig2.update_layout(xaxis_title="", yaxis_title="wallet count", bargap=0.2)
